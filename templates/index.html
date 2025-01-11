@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Add custom styles -->
+    <style>
+        .task-card {
+            transition: all 0.3s ease;
+        }
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .gradient-text {
+            background: linear-gradient(45deg, #60A5FA, #34D399);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            position: relative;
+        }
+        .modern-input {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            background: rgba(55, 65, 81, 0.8);
+            backdrop-filter: blur(8px);
+        }
+        .modern-input:focus {
+            border-color: #60A5FA;
+            box-shadow: 0 0 15px rgba(96, 165, 250, 0.3);
+            transform: translateY(-1px);
+        }
+        .gradient-button {
+            background: linear-gradient(45deg, #4F46E5, #60A5FA);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .gradient-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+        }
+        .gradient-button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #60A5FA, #4F46E5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .gradient-button:hover::after {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div id="notification-popup" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700 max-w-md w-full mx-4 transform transition-all">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-blue-400" id="popup-title">Task Alert</h3>
+                <button onclick="closePopup()" class="text-gray-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mb-6">
+                <p class="text-gray-300" id="popup-message"></p>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="closePopup()" 
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+                    Acknowledge
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="notification-sound" preload="auto">
+        <source src="{{ url_for('static', filename='notification.mp3') }}" type="audio/mpeg">
+    </audio>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-12">
+            <div class="flex items-center justify-center mb-4">
+                <svg class="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+            </div>
+            <h1 class="text-5xl font-bold gradient-text mb-2">IbraTask</h1>
+            <p class="text-gray-400 text-lg">Respect Time And Be more Productive</p>
+        </div>
+        
+        <!-- Add Task Form -->
+        <form action="{{ url_for('create_task') }}" method="POST" class="mb-8 bg-gray-800/50 backdrop-blur-lg p-8 rounded-xl shadow-xl max-w-2xl mx-auto border border-gray-700">
+            <div class="grid grid-cols-1 gap-6">
+                <div class="relative">
+                    <input type="text" name="title" placeholder="Task Title" required
+                        class="modern-input w-full p-4 pl-12 rounded-lg text-white placeholder-gray-400 focus:outline-none">
+                    <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                        </svg>
+                    </div>
+                </div>
+                
+                <textarea name="description" placeholder="Description" 
+                    class="modern-input w-full p-4 rounded-lg text-white placeholder-gray-400 focus:outline-none min-h-[100px]"></textarea>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="date" name="due_date" 
+                        class="modern-input p-4 rounded-lg text-white focus:outline-none"
+                        placeholder="Due Date">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="time" name="start_time" 
+                            class="modern-input p-4 rounded-lg text-white focus:outline-none"
+                            placeholder="Start Time">
+                        <input type="time" name="end_time" 
+                            class="modern-input p-4 rounded-lg text-white focus:outline-none"
+                            placeholder="End Time">
+                    </div>
+                </div>
+                
+                <select name="priority" class="modern-input p-4 rounded-lg text-white focus:outline-none">
+                    <option value="low">Low Priority</option>
+                    <option value="medium" selected>Medium Priority</option>
+                    <option value="high">High Priority</option>
+                </select>
+                
+                <button type="submit" 
+                    class="gradient-button text-white py-4 px-6 rounded-lg font-semibold text-lg relative overflow-hidden group">
+                    <span class="relative z-10 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        Create Task
+                    </span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Task List -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for task in tasks %}
+            <div class="task-card bg-gray-800 p-5 rounded-lg shadow-xl border-l-4 
+                {% if task.priority == 'high' %}border-red-500{% elif task.priority == 'medium' %}border-yellow-500{% else %}border-green-500{% endif %}
+                {% if task.status == 'completed' %}opacity-75{% endif %}">
+                <h3 class="text-xl font-semibold mb-3 text-blue-400">{{ task.title }}</h3>
+                <p class="text-gray-400 mb-4">{{ task.description }}</p>
+                <div class="flex flex-col space-y-3">
+                    <div class="text-sm space-y-2">
+                        <div class="flex justify-between items-center text-gray-500">
+                            <span>Schedule: {{ task.due_date.strftime('%Y-%m-%d') if task.due_date else 'No date' }}</span>
+                            <span>{{ task.due_date.strftime('%H:%M') if task.due_date else '' }} - {{ task.end_time.strftime('%H:%M') if task.end_time else '' }}</span>
+                        </div>
+                        <div class="timer-container bg-gray-700/50 p-3 rounded-lg">
+                            {% if task.status == 'pending' and task.due_date %}
+                                <div class="countdown-timer text-yellow-400" 
+                                     data-start-time="{{ task.due_date.isoformat() if task.due_date else '' }}"
+                                     data-task-id="{{ task.id }}">
+                                    <div class="flex justify-between items-center">
+                                        <span>Time until start:</span>
+                                        <span class="timer-value font-mono">Loading...</span>
+                                    </div>
+                                </div>
+                            {% elif task.status == 'in_progress' and task.end_time %}
+                                <div class="running-timer text-green-400" 
+                                     data-end-time="{{ task.end_time.isoformat() if task.end_time else '' }}"
+                                     data-start-time="{{ task.start_time.isoformat() if task.start_time else '' }}"
+                                     data-task-id="{{ task.id }}">
+                                    <div class="flex justify-between items-center">
+                                        <span>Time remaining:</span>
+                                        <span class="timer-value font-mono">Loading...</span>
+                                    </div>
+                                </div>
+                            {% elif task.status == 'completed' %}
+                                <div class="text-blue-400">
+                                    Task completed
+                                </div>
+                            {% else %}
+                                <div class="text-gray-400">
+                                    No timer set
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <select onchange="updateTaskStatus('{{ task.id }}', this.value)" 
+                            class="text-sm rounded px-3 py-2 w-32 focus:outline-none focus:ring-2 focus:ring-blue-500
+                            {% if task.status == 'completed' %}
+                                bg-green-600 text-white
+                            {% elif task.status == 'in_progress' %}
+                                bg-yellow-600 text-white
+                            {% else %}
+                                bg-gray-600 text-white
+                            {% endif %}">
+                            <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                            <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>Completed</option>
+                        </select>
+                        <form action="{{ url_for('delete_task', task_id=task.id) }}" method="POST" class="inline">
+                            <button type="submit" class="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 transition duration-200">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function showNotification(title, message) {
+            const popup = document.getElementById('notification-popup');
+            const sound = document.getElementById('notification-sound');
+            
+            document.getElementById('popup-title').textContent = title;
+            document.getElementById('popup-message').textContent = message;
+            
+            popup.classList.remove('hidden');
+            popup.classList.add('flex');
+            
+            // Play sound
+            sound.play().catch(e => console.log('Error playing sound:', e));
+        }
+
+        function closePopup() {
+            const popup = document.getElementById('notification-popup');
+            popup.classList.add('hidden');
+            popup.classList.remove('flex');
+        }
+
+        function formatTime(hours, minutes, seconds) {
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function updateTimers() {
+            // Update countdown timers for pending tasks
+            document.querySelectorAll('.countdown-timer').forEach(timer => {
+                const startTime = new Date(timer.dataset.startTime);
+                const timerValue = timer.querySelector('.timer-value');
+                const taskId = timer.dataset.taskId;
+                const taskTitle = timer.closest('.task-card').querySelector('h3').textContent;
+
+                if (!timer.dataset.startTime) {
+                    timerValue.textContent = 'No start time set';
+                    return;
+                }
+
+                const now = new Date();
+                const diff = startTime - now;
+
+                if (diff > 0) {
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                    timerValue.textContent = formatTime(hours, minutes, seconds);
+                } else {
+                    if (timerValue.textContent !== 'Ready to start!') {
+                        showNotification(
+                            'Task Ready to Start',
+                            `The task "${taskTitle}" is now ready to begin!`
+                        );
+                    }
+                    timerValue.textContent = 'Ready to start!';
+                    timer.classList.remove('text-yellow-400');
+                    timer.classList.add('text-green-400');
+                }
+            });
+
+            // Update running timers for in-progress tasks
+            document.querySelectorAll('.running-timer').forEach(timer => {
+                const endTime = new Date(timer.dataset.endTime);
+                const timerValue = timer.querySelector('.timer-value');
+                const taskId = timer.dataset.taskId;
+                const taskTitle = timer.closest('.task-card').querySelector('h3').textContent;
+
+                if (!timer.dataset.endTime) {
+                    timerValue.textContent = 'No end time set';
+                    return;
+                }
+
+                const now = new Date();
+                const diff = endTime - now;
+
+                if (diff > 0) {
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                    timerValue.textContent = formatTime(hours, minutes, seconds);
+                } else {
+                    if (timerValue.textContent !== 'Time is up!') {
+                        showNotification(
+                            'Task Time Up',
+                            `The time has expired for task "${taskTitle}"!`
+                        );
+                    }
+                    timerValue.textContent = 'Time is up!';
+                    timer.classList.remove('text-green-400');
+                    timer.classList.add('text-red-400');
+                }
+            });
+        }
+
+        // Update task status with reload
+        function updateTaskStatus(taskId, status) {
+            fetch(`/task/${taskId}/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `status=${status}`
+            }).then(() => {
+                window.location.reload();
+            });
+        }
+
+        // Update timers every second
+        setInterval(updateTimers, 1000);
+        
+        // Initial update
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTimers();
+        });
+    </script>
+</body>
+</html> 
