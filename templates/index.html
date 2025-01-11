@@ -56,6 +56,32 @@
         .gradient-button:hover::after {
             opacity: 1;
         }
+        /* Mobile-friendly form styling */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        input[type="date"],
+        input[type="time"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 768px) {
+            /* Mobile-specific adjustments */
+            .time-inputs {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen">
