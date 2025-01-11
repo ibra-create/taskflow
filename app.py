@@ -5,22 +5,23 @@ from datetime import datetime
 import webview
 
 app = Flask(__name__)
-with app.app_context():
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    db = SQLAlchemy(app)
-    db.create_all()
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=True)
-    due_date = db.Column(db.DateTime, nullable=True)
-    start_time = db.Column(db.DateTime, nullable=True)
-    end_time = db.Column(db.DateTime, nullable=True)
-    priority = db.Column(db.String(20), default='medium')
-    status = db.Column(db.String(20), default='pending')
+    description = db.Column(db.String(500))
+    due_date = db.Column(db.DateTime)
+    start_time = db.Column(db.DateTime)
+    end_time = db.Column(db.DateTime)
+    priority = db.Column(db.String(20))
+    status = db.Column(db.String(20))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+with app.app_context():
+    db.create_all()
 
 @app.route('/')
 def index():
