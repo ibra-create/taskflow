@@ -3,3 +3,4 @@ Werkzeug==2.0.3
 Flask-SQLAlchemy==2.5.1
 gunicorn==20.1.0
 pywebview==4.3.3
+SQLAlchemy==1.4.23
